@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+
+
+    <item
+        android:id="@+id/home_navigation"
+        android:title="Home"
+        android:icon="@mipmap/testicon"
+
+        />
+
+    <item
+        android:id="@+id/clipboard_navigation"
+        android:title="Past Dreams"
+        android:icon="@mipmap/clipboard_mono"
+        />
+
+    <item
+        android:id="@+id/AI_navigation"
+        android:title="AI"
+        android:icon="@mipmap/ai_icon"
+        />
+
+    <item
+        android:id="@+id/settings_navigation"
+        android:title="Settings"
+        android:icon="@mipmap/cog_icon"
+        />
+</menu>
+
