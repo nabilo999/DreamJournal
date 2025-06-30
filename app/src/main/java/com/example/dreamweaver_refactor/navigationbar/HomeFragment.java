@@ -7,6 +7,7 @@ import android.os.Bundle;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -14,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import android.speech.RecognitionListener;
@@ -21,8 +23,16 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 
 import com.example.dreamweaver_refactor.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Locale;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -148,8 +158,14 @@ public class HomeFragment extends Fragment {
             @Override public void onEvent(int i, Bundle bundle) {}
         });
 
-
-
+        Button save_Button = view.findViewById(R.id.save_button);
+        save_Button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stopSpeechRecognition();
+                addToDreamDatabase(textbox.getText().toString());
+            }
+        });
 
         return view;
     }
@@ -193,6 +209,38 @@ public class HomeFragment extends Fragment {
             // TODO: Update button UI to indicate stopped state
         }
     }
+
+    private void addToDreamDatabase(String description){
+        HashMap<String,String> log = new HashMap<>();
+
+        log.put("tag", "gg"); //generateTag(description)
+        log.put("title","gg");//generateTitle(description)
+        log.put("description",description);
+        log.put("date",generateDate());
+
+
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference Logref =database.getReference("Dream Journal");
+
+        String key = Logref.push().getKey();
+        log.put("key",key);
+
+        Logref.child(key).setValue(log).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                Toast.makeText(getActivity(), "saved to db", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private String generateDate() {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        String date = sdf.format(calendar.getTime());
+        return date;}
+
+    private String generateTitle(String description){return"TODO";}
+    private String generateTag(String description){return"TODO";}
 }
 
 

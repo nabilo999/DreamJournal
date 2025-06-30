@@ -1,4 +1,4 @@
-package com.example.dreamweaver_refactor;
+package com.example.dreamweaver_refactor.entries_recycler;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -10,6 +10,8 @@ import android.view.View;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.dreamweaver_refactor.R;
 
 import java.util.ArrayList;
 
@@ -30,9 +32,9 @@ public class recycler_view_adapter_entries extends RecyclerView.Adapter<recycler
 
     @Override
     public void onBindViewHolder(@NonNull recycler_view_adapter_entries.ViewHolder holder, int position) {
-        holder.entry_title.setText(this.entries.get(position).getTitle());
-        holder.entry_time.setText(this.entries.get(position).getDate());
-        holder.entry_tag.setText(this.entries.get(position).getTag());
+        holder.title.setText(this.entries.get(position).getTitle());
+        holder.date.setText(this.entries.get(position).getDate());
+        holder.tag.setText(this.entries.get(position).getTag());
     }
 
     @Override
@@ -43,15 +45,15 @@ public class recycler_view_adapter_entries extends RecyclerView.Adapter<recycler
 
 
 public class ViewHolder extends RecyclerView.ViewHolder {
-    private TextView entry_title;
-    private TextView entry_time;
-    private TextView entry_tag;
+    private TextView title;
+    private TextView date;
+    private TextView tag;
 
     public ViewHolder(View itemView) {
         super(itemView);
-        entry_title = itemView.findViewById(R.id.title);
-        entry_time = itemView.findViewById(R.id.date);
-        entry_tag = itemView.findViewById(R.id.tag);
+        title = itemView.findViewById(R.id.title);
+        date = itemView.findViewById(R.id.date);
+        tag = itemView.findViewById(R.id.tag);
 
     }
 }

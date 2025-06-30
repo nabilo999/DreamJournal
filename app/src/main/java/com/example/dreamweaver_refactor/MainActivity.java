@@ -26,6 +26,8 @@ import com.example.dreamweaver_refactor.navigationbar.LogFragment;
 import com.example.dreamweaver_refactor.navigationbar.SettingsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -58,6 +60,11 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference Myref =database.getReference("message");
+
+        Myref.setValue("hello nabil");
 
     }
 }

@@ -2,6 +2,7 @@ package com.example.dreamweaver_refactor.navigationbar;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -11,8 +12,13 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.example.dreamweaver_refactor.R;
-import com.example.dreamweaver_refactor.dream_entry_components;
-import com.example.dreamweaver_refactor.recycler_view_adapter_entries;
+import com.example.dreamweaver_refactor.entries_recycler.dream_entry_components;
+import com.example.dreamweaver_refactor.entries_recycler.recycler_view_adapter_entries;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 
@@ -70,11 +76,37 @@ public class LogFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_log, container, false);
 
         ArrayList<dream_entry_components> journal = new ArrayList<>();
+        //journal.add(new dream_entry_components("Dream about stuff","Jun 29, 2023 • 07:30","sleepy","..."));
+
         recycler_view_adapter_entries adapter = new recycler_view_adapter_entries(getActivity());
         adapter.setContacts(journal);
         RecyclerView contacts_recyclerview2 = view.findViewById(R.id.journal_recycler);
         contacts_recyclerview2.setAdapter(adapter);
         contacts_recyclerview2.setLayoutManager(new LinearLayoutManager(getActivity()));
+
+
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference Logref =database.getReference("Dream Journal");
+
+        Logref.addValueEventListener(new ValueEventListener() {// adds items from database to recycler
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                journal.clear(); // Prevent duplicates
+
+                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                    dream_entry_components header = dataSnapshot.getValue(dream_entry_components.class);
+                    if (header != null) {
+                        journal.add(header);
+                    }
+                }
+                adapter.notifyDataSetChanged(); // Refresh RecyclerView
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
 
 
         return view;
