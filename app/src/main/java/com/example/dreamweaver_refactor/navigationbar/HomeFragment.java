@@ -5,10 +5,10 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -28,11 +28,26 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
 
 /**
  * A simple {@link Fragment} subclass.
@@ -85,6 +100,8 @@ public class HomeFragment extends Fragment {
     private boolean isRecording = false; // Flag to track if recording was stopped manually
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
     private SpeechRecognizer speechRecognizer;
+    public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    OkHttpClient client = new OkHttpClient();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -164,6 +181,7 @@ public class HomeFragment extends Fragment {
             public void onClick(View v) {
                 stopSpeechRecognition();
                 addToDreamDatabase(textbox.getText().toString());
+                textbox.setText("");
             }
         });
 
@@ -210,28 +228,33 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void addToDreamDatabase(String description){
-        HashMap<String,String> log = new HashMap<>();
+    private void addToDreamDatabase(String description) {
+        final HashMap<String, String> log = new HashMap<>();
+        log.put("description", description);
+        log.put("date", generateDate());
 
-        log.put("tag", "gg"); //generateTag(description)
-        log.put("title","gg");//generateTitle(description)
-        log.put("description",description);
-        log.put("date",generateDate());
+        // Step 1: Generate Tag
+        callAPI(description, "generate a one word tag from this description examples include (scary, ethereal, calming, ...) use simple words nothing too convoluted: ", tag -> {
+            log.put("tag", tag);
 
+            // Step 2: Generate Title
+            callAPI(description, "generate a less than 6 word title from this description (no quotation marks around the title just the title): ", title -> {
+                log.put("title", title);
 
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference Logref =database.getReference("Dream Journal");
+                // Step 3: Save to Firebase after both tag & title are received
+                FirebaseDatabase database = FirebaseDatabase.getInstance();
+                DatabaseReference Logref = database.getReference("Dream Journal");
 
-        String key = Logref.push().getKey();
-        log.put("key",key);
+                String key = Logref.push().getKey();
+                log.put("key", key);
 
-        Logref.child(key).setValue(log).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                Toast.makeText(getActivity(), "saved to db", Toast.LENGTH_SHORT).show();
-            }
+                Logref.child(key).setValue(log).addOnCompleteListener(task -> {
+                    Toast.makeText(getActivity(), "Saved to DB", Toast.LENGTH_SHORT).show();
+                });
+            });
         });
     }
+
 
     private String generateDate() {
         Calendar calendar = Calendar.getInstance();
@@ -239,8 +262,55 @@ public class HomeFragment extends Fragment {
         String date = sdf.format(calendar.getTime());
         return date;}
 
-    private String generateTitle(String description){return"TODO";}
-    private String generateTag(String description){return"TODO";}
+    interface APICallback {
+        void onResult(String response);
+    }
+
+    private void callAPI(String question, String prompt, APICallback callback) {
+        JSONObject jsonbody = new JSONObject();
+        try {
+            jsonbody.put("model", "gpt-3.5-turbo");
+            jsonbody.put("messages", new JSONArray()
+                    .put(new JSONObject().put("role", "system").put("content", "You are a helpful assistant."))
+                    .put(new JSONObject().put("role", "user").put("content", prompt + " " + question))
+            );
+            jsonbody.put("max_tokens", 200);
+            jsonbody.put("temperature", 0.7);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        RequestBody body = RequestBody.create(jsonbody.toString(), JSON);
+        Request request = new Request.Builder()
+                .url("https://api.openai.com/v1/chat/completions")
+                .header("Authorization", "Bearer") // Keep this safe; never share it in public
+                .post(body)
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                callback.onResult("an issue has occurred " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(response.body().string());
+                        JSONArray choices = jsonObject.getJSONArray("choices");
+                        String result = choices.getJSONObject(0).getJSONObject("message").getString("content");
+                        callback.onResult(result.trim());
+                    } catch (JSONException e) {
+                        callback.onResult("JSON parsing error: " + e.getMessage());
+                    }
+                } else {
+                    callback.onResult("API Error: " + response.body().string());
+                }
+            }
+        });
+    }
+
 }
 
 
