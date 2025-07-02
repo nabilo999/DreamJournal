@@ -283,7 +283,7 @@ public class HomeFragment extends Fragment {
         RequestBody body = RequestBody.create(jsonbody.toString(), JSON);
         Request request = new Request.Builder()
                 .url("https://api.openai.com/v1/chat/completions")
-                .header("Authorization", "Bearer") // Keep this safe; never share it in public
+                .header("Authorization", "Bearer ") // Keep this safe; never share it in public
                 .post(body)
                 .build();
 
